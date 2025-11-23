@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import engine, Base, get_db
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 from app.db import models 
 from pydantic import BaseModel 
 from app.db.models import Document
@@ -85,6 +86,8 @@ async def chat(req:ChatRequest, db: AsyncSession = Depends(get_db)):
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as conn:
+        # まず pgvector (vector) 拡張を作成しておく
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
         # DBにテーブルが無ければ作成する
         await conn.run_sync(Base.metadata.create_all)
     print("----------------------------------")
