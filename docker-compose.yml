@@ -10,5 +10,43 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d rag_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  # 2. バックエンド (FastAPI)
+  backend:
+    build: .  # ルートの Dockerfile を使用
+    ports:
+      - "8000:8000"
+    environment:
+      # Docker内では 'localhost' ではなくサービス名 'db' でアクセスします
+      DATABASE_URL: postgresql+asyncpg://user:password@db:5432/rag_db
+      # ローカルの .env にある API キーを読み込ませる
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    # 開発中はコード変更を即反映させるためボリュームマウントすると便利
+    volumes:
+      - ./app:/app/app
+
+  # 3. フロントエンド (Next.js)
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # ブラウザ(クライアント)から見たAPIのURL
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+    # 開発用設定 (npm run dev で起動する場合)
+    # command: npm run dev
+    # volumes:
+    #   - ./frontend:/app
+    #   - /app/node_modules
+    #   - /app/.next
 volumes:
   postgres_data:

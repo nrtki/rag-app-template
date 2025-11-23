@@ -51,6 +51,15 @@ cd frontend
 npm install
 cd ..
 ```
+---
+## 起動手順（Docker）
+```bash
+docker-compose -up
+```
+## 終了手順（Docker）
+```bash
+docker-compose -down
+```
 
 -----
 
